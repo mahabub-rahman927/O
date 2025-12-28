@@ -1,0 +1,16 @@
+{
+  "name": "vps-web-shell",
+  "version": "1.0.0",
+  "description": "Auto-login Web Shell for VPS",
+  "main": "vps.js",
+  "scripts": {
+    "start": "node vps.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-pty": "^1.0.0",
+    "socket.io": "^4.7.2"
+  },
+  "author": "Siyam",
+  "license": "ISC"
+}
