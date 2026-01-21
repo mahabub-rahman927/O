@@ -180,22 +180,25 @@ module.exports = {
 
     // --- Add video ---
     if (type === "add_video") {
-      try {
-        message.reply(toBoldExceptUrl(`🔄 Uploading to Catbox...`));
+  try {
+    // 1) Send uploading message
+    const sentMsg = await message.reply(toBoldExceptUrl(`🔄 Uploading to Catbox...`));
 
-        const catboxUrl = await uploadToCatbox(videoUrl, "video");
+    // 2) Upload to Catbox
+    const catboxUrl = await uploadToCatbox(videoUrl, "video");
 
-        const res = await axios.get(`${BASE_API}/api/upload/${selectedCategory}?url=${encodeURIComponent(catboxUrl)}`);
+    // 3) Send to your API
+    const res = await axios.get(`${BASE_API}/api/upload/${selectedCategory}?url=${encodeURIComponent(catboxUrl)}`);
 
-        if (res.data.status) {
-          return message.reply(toBoldExceptUrl(`✅ Successfully added!\n📂 Album: ${selectedCategory}\n📊 Total: ${res.data.totalVideos}\n🔗 Catbox: ${catboxUrl}`));
-        } else {
-          return message.reply(toBoldExceptUrl("❌ Upload failed."));
-        }
-      } catch (err) {
-        return message.reply(toBoldExceptUrl("❌ API Error."));
-      }
-    }
+    // 4) Edit the message with success
+    return api.editMessage(
+      toBoldExceptUrl(`✅ Successfully added!\n📂 Album: ${selectedCategory}\n📊 Total: ${res.data.totalVideos}\n🔗 Catbox: ${catboxUrl}`),
+      sentMsg.messageID
+    );
+  } catch (err) {
+    return message.reply(toBoldExceptUrl("❌ API Error."));
+  }
+}
 
     // --- View video ---
     if (type === "view_video") {
