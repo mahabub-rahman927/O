@@ -19,25 +19,18 @@ function bold(text) {
 
 function toBoldExceptUrl(text) {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
-
-  // Replace URL with placeholder to keep it safe
   const placeholders = [];
   const safeText = text.replace(urlRegex, (match) => {
     placeholders.push(match);
     return `<<URL${placeholders.length - 1}>>`;
   });
 
-  // Bold the rest of the text
-  let result = safeText.replace(/<<URL\d+>>/g, (match) => match);
-
-  // Apply bold to text excluding placeholders
-  const parts = result.split(/(<<URL\d+>>)/g);
+  const parts = safeText.split(/(<<URL\d+>>)/g);
   const finalText = parts.map(part => {
-    if (part.startsWith("<<URL")) return part; // keep placeholder
-    return bold(part); // bold normal text
+    if (part.startsWith("<<URL")) return part;
+    return bold(part);
   }).join("");
 
-  // Replace placeholders back with actual URLs
   return finalText.replace(/<<URL(\d+)>>/g, (_, index) => placeholders[index]);
 }
 
@@ -81,7 +74,7 @@ module.exports = {
     name: "album",
     aliases: ["al"],
     version: "2.5",
-    author: "MR᭄﹅ MAHABUB﹅ メꪜ",
+    author: "Mahabub",
     countDown: 5,
     role: 0,
     shortDescription: "Smart Album System",
@@ -180,25 +173,25 @@ module.exports = {
 
     // --- Add video ---
     if (type === "add_video") {
-  try {
-    // 1) Send uploading message
-    const sentMsg = await message.reply(toBoldExceptUrl(`🔄 Uploading to Catbox...`));
+      try {
+        // Send uploading message
+        const sentMsg = await message.reply(toBoldExceptUrl(`🔄 Uploading to Catbox...`));
 
-    // 2) Upload to Catbox
-    const catboxUrl = await uploadToCatbox(videoUrl, "video");
+        // Upload to Catbox
+        const catboxUrl = await uploadToCatbox(videoUrl, "video");
 
-    // 3) Send to your API
-    const res = await axios.get(`${BASE_API}/api/upload/${selectedCategory}?url=${encodeURIComponent(catboxUrl)}`);
+        // Add to API
+        const res = await axios.get(`${BASE_API}/api/upload/${selectedCategory}?url=${encodeURIComponent(catboxUrl)}`);
 
-    // 4) Edit the message with success
-    return api.editMessage(
-      toBoldExceptUrl(`✅ Successfully added!\n📂 Album: ${selectedCategory}\n📊 Total: ${res.data.totalVideos}\n🔗 Catbox: ${catboxUrl}`),
-      sentMsg.messageID
-    );
-  } catch (err) {
-    return message.reply(toBoldExceptUrl("❌ API Error."));
-  }
-}
+        // Edit message to success
+        return api.editMessage(
+          toBoldExceptUrl(`✅ Successfully added!\n📂 Album: ${selectedCategory}\n📊 Total: ${res.data.totalVideos}\n🔗 Catbox: ${catboxUrl}`),
+          sentMsg.messageID
+        );
+      } catch (err) {
+        return message.reply(toBoldExceptUrl("❌ API Error."));
+      }
+    }
 
     // --- View video ---
     if (type === "view_video") {
