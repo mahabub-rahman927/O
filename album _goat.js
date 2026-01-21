@@ -84,10 +84,10 @@ module.exports = {
   },
 
   onStart: async function ({ message, event, api, args }) {
-   
-const MAHABUB4X = await axios.get("https://raw.githubusercontent.com/MR-MAHABUB-004/MAHABUB-BOT-STORAGE/refs/heads/main/APIURL.json");
-const BASE_API = MAHABUB4X.data.album;
-  }
+
+    // ⚠️ Fetch BASE_API URL properly
+    const resApi = await axios.get("https://raw.githubusercontent.com/MR-MAHABUB-004/MAHABUB-BOT-STORAGE/refs/heads/main/APIURL.json");
+    const BASE_API = resApi.data.album;
 
     // --- Add video process ---
     if (args[0] === "add") {
@@ -177,16 +177,12 @@ const BASE_API = MAHABUB4X.data.album;
     // --- Add video ---
     if (type === "add_video") {
       try {
-        // Send uploading message
         const sentMsg = await message.reply(toBoldExceptUrl(`🔄 Uploading to Catbox...`));
 
-        // Upload to Catbox
         const catboxUrl = await uploadToCatbox(videoUrl, "video");
 
-        // Add to API
         const res = await axios.get(`${BASE_API}/api/upload/${selectedCategory}?url=${encodeURIComponent(catboxUrl)}`);
 
-        // Edit message to success
         return api.editMessage(
           toBoldExceptUrl(`✅ Successfully added!\n📂 Album: ${selectedCategory}\n📊 Total: ${res.data.totalVideos}\n🔗 Catbox: ${catboxUrl}`),
           sentMsg.messageID
