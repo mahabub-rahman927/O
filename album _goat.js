@@ -87,7 +87,7 @@ module.exports = {
    
 const MAHABUB4X = await axios.get("https://raw.githubusercontent.com/MR-MAHABUB-004/MAHABUB-BOT-STORAGE/refs/heads/main/APIURL.json");
 const BASE_API = MAHABUB4X.data.album;
-  };
+  }
 
     // --- Add video process ---
     if (args[0] === "add") {
