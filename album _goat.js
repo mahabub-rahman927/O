@@ -85,7 +85,7 @@ module.exports = {
 
   onStart: async function ({ message, event, api, args }) {
 
-    // ⚠️ Fetch BASE_API URL properly
+    // Fetch BASE_API URL properly
     const resApi = await axios.get("https://raw.githubusercontent.com/MR-MAHABUB-004/MAHABUB-BOT-STORAGE/refs/heads/main/APIURL.json");
     const BASE_API = resApi.data.album;
 
@@ -124,7 +124,8 @@ module.exports = {
             type: "add_video",
             videoUrl: videoUrl,
             categories: categories,
-            author: event.senderID
+            author: event.senderID,
+            BASE_API: BASE_API
           });
         });
       } catch (err) {
@@ -154,7 +155,8 @@ module.exports = {
             type: "view_video",
             messageID: info.messageID,
             categories: categories,
-            author: event.senderID
+            author: event.senderID,
+            BASE_API: BASE_API
           });
         });
       } catch (err) {
@@ -164,11 +166,10 @@ module.exports = {
   },
 
   onReply: async function ({ message, event, api, Reply }) {
-    const { type, categories, videoUrl, messageID, author } = Reply;
+    const { type, categories, videoUrl, messageID, author, BASE_API } = Reply;
     if (event.senderID !== author) return;
 
     const index = parseInt(event.body);
-    const BASE_API = "http://72.62.241.211:6788";
 
     if (isNaN(index) || index <= 0 || index > categories.length) return;
 
