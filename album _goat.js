@@ -3,29 +3,47 @@ const FormData = require("form-data");
 const url = require("url");
 const path = require("path");
 
-function toBold(text) {
+function bold(text) {
   let result = "";
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     const code = ch.charCodeAt(0);
 
-    if (code >= 65 && code <= 90) {
-      result += String.fromCodePoint(0x1D400 + (code - 65));
-    } else if (code >= 97 && code <= 122) {
-      result += String.fromCodePoint(0x1D41A + (code - 97));
-    } else if (code >= 48 && code <= 57) {
-      result += String.fromCodePoint(0x1D7CE + (code - 48));
-    } else {
-      result += ch;
-    }
+    if (code >= 65 && code <= 90) result += String.fromCodePoint(0x1D400 + (code - 65));
+    else if (code >= 97 && code <= 122) result += String.fromCodePoint(0x1D41A + (code - 97));
+    else if (code >= 48 && code <= 57) result += String.fromCodePoint(0x1D7CE + (code - 48));
+    else result += ch;
   }
   return result;
+}
+
+function toBoldExceptUrl(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  // Replace URL with placeholder to keep it safe
+  const placeholders = [];
+  const safeText = text.replace(urlRegex, (match) => {
+    placeholders.push(match);
+    return `<<URL${placeholders.length - 1}>>`;
+  });
+
+  // Bold the rest of the text
+  let result = safeText.replace(/<<URL\d+>>/g, (match) => match);
+
+  // Apply bold to text excluding placeholders
+  const parts = result.split(/(<<URL\d+>>)/g);
+  const finalText = parts.map(part => {
+    if (part.startsWith("<<URL")) return part; // keep placeholder
+    return bold(part); // bold normal text
+  }).join("");
+
+  // Replace placeholders back with actual URLs
+  return finalText.replace(/<<URL(\d+)>>/g, (_, index) => placeholders[index]);
 }
 
 async function uploadToCatbox(mediaUrl, attachmentType) {
   const mediaBuffer = (await axios.get(mediaUrl, { responseType: "arraybuffer" })).data;
 
-  // Determine extension
   let ext;
   if (attachmentType && attachmentType.includes("video")) ext = ".mp4";
   else ext = path.extname(url.parse(mediaUrl).pathname) || ".mp4";
@@ -53,7 +71,6 @@ async function uploadToCatbox(mediaUrl, attachmentType) {
     throw new Error("Catbox upload failed: " + catboxUrl);
   }
 
-  // Force mp4 extension
   catboxUrl = catboxUrl.replace(/\.video$/, ".mp4");
 
   return catboxUrl;
@@ -80,7 +97,6 @@ module.exports = {
     if (args[0] === "add") {
       let videoUrl = args[1];
 
-      // If replied to a video
       if (event.type === "message_reply") {
         const attachment = event.messageReply.attachments[0];
         if (attachment) {
@@ -88,7 +104,7 @@ module.exports = {
         }
       }
 
-      if (!videoUrl) return message.reply(toBold("❌ Please reply to a video or provide a URL!"));
+      if (!videoUrl) return message.reply(toBoldExceptUrl("❌ Please reply to a video or provide a URL!"));
 
       try {
         const res = await axios.get(`${BASE_API}/api/upload`);
@@ -106,7 +122,7 @@ module.exports = {
                `  💡 Reply with the number where\n` +
                `  you want to add this video.`;
 
-        return message.reply(toBold(msg), (err, info) => {
+        return message.reply(toBoldExceptUrl(msg), (err, info) => {
           global.GoatBot.onReply.set(info.messageID, {
             commandName: this.config.name,
             type: "add_video",
@@ -116,7 +132,7 @@ module.exports = {
           });
         });
       } catch (err) {
-        return message.reply(toBold("❌ Could not fetch categories."));
+        return message.reply(toBoldExceptUrl("❌ Could not fetch categories."));
       }
     }
 
@@ -136,7 +152,7 @@ module.exports = {
 
         msg += `\n╼───────────────╼\n  💡 Reply number to get video.`;
 
-        return message.reply(toBold(msg), (err, info) => {
+        return message.reply(toBoldExceptUrl(msg), (err, info) => {
           global.GoatBot.onReply.set(info.messageID, {
             commandName: this.config.name,
             type: "view_video",
@@ -146,7 +162,7 @@ module.exports = {
           });
         });
       } catch (err) {
-        return message.reply(toBold("❌ Error loading list."));
+        return message.reply(toBoldExceptUrl("❌ Error loading list."));
       }
     }
   },
@@ -165,42 +181,40 @@ module.exports = {
     // --- Add video ---
     if (type === "add_video") {
       try {
-        message.reply(toBold(`🔄 Uploading to Catbox...`));
+        message.reply(toBoldExceptUrl(`🔄 Uploading to Catbox...`));
 
-        // Upload to Catbox
         const catboxUrl = await uploadToCatbox(videoUrl, "video");
 
-        // Send to your API
         const res = await axios.get(`${BASE_API}/api/upload/${selectedCategory}?url=${encodeURIComponent(catboxUrl)}`);
 
         if (res.data.status) {
-          return message.reply(toBold(`✅ Successfully added!\n📂 Album: ${selectedCategory}\n📊 Total: ${res.data.totalVideos}\n🔗 Catbox: ${catboxUrl}`));
+          return message.reply(toBoldExceptUrl(`✅ Successfully added!\n📂 Album: ${selectedCategory}\n📊 Total: ${res.data.totalVideos}\n🔗 Catbox: ${catboxUrl}`));
         } else {
-          return message.reply(toBold("❌ Upload failed."));
+          return message.reply(toBoldExceptUrl("❌ Upload failed."));
         }
       } catch (err) {
-        return message.reply(toBold("❌ API Error."));
+        return message.reply(toBoldExceptUrl("❌ API Error."));
       }
     }
 
     // --- View video ---
     if (type === "view_video") {
       try {
-        await api.editMessage(toBold("⏳ Preparing..."), messageID);
+        await api.editMessage(toBoldExceptUrl("⏳ Preparing..."), messageID);
         const res = await axios.get(`${BASE_API}/api/${selectedCategory}`);
 
-        if (!res.data.status) return api.editMessage(toBold("❌ No video found!"), messageID);
+        if (!res.data.status) return api.editMessage(toBoldExceptUrl("❌ No video found!"), messageID);
 
-        await api.editMessage(toBold("🔄 Sending..."), messageID);
+        await api.editMessage(toBoldExceptUrl("🔄 Sending..."), messageID);
 
         await message.reply({
-          body: toBold(`🎬 Category: ${selectedCategory.toUpperCase()}`),
+          body: toBoldExceptUrl(`🎬 Category: ${selectedCategory.toUpperCase()}`),
           attachment: await global.utils.getStreamFromURL(res.data.video)
         });
 
-        return api.editMessage(toBold("✨ Enjoy your video!"), messageID);
+        return api.editMessage(toBoldExceptUrl("✨ Enjoy your video!"), messageID);
       } catch (err) {
-        return api.editMessage(toBold("❌ Error!"), messageID);
+        return api.editMessage(toBoldExceptUrl("❌ Error!"), messageID);
       }
     }
   }
