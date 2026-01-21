@@ -84,7 +84,12 @@ module.exports = {
   },
 
   onStart: async function ({ message, event, api, args }) {
-    const BASE_API = "http://72.62.241.211:6788";
+   
+    const BASE_API = async () => {
+  const res = await axios.get("https://raw.githubusercontent.com/MR-MAHABUB-004/MAHABUB-BOT-STORAGE/refs/heads/main/APIURL.json");
+  return res.data.album; 
+};
+    
 
     // --- Add video process ---
     if (args[0] === "add") {
